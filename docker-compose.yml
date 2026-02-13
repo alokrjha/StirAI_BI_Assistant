@@ -1,41 +1,43 @@
 
-# To run this:
-# 1. Save this file as docker-compose.yml
-# 2. Run `docker-compose up -d`
-# 3. Access Superset at http://localhost:8088
+version: "3.8"
 
-version: "3.7"
 services:
   superset:
     image: apache/superset:latest
     container_name: superset_app
+    restart: always
     ports:
       - "8088:8088"
     environment:
-      - SUPERSET_SECRET_KEY=your_secret_key_here
+      - SUPERSET_SECRET_KEY=dev_secret_key_12345
       - ADMIN_USERNAME=admin
       - ADMIN_PASSWORD=admin
+      - TALISMAN_ENABLED=False
     volumes:
       - ./superset_data:/app/superset_home
-      - ./data:/data # Mount your Parquet files folder here
+      - ./data:/data
+    # We install duckdb-engine at runtime. 
+    # Using 'sh -c' to ensure the environment is ready before starting the server.
     entrypoint: >
       /bin/sh -c "
-      pip install duckdb-engine &&
+      pip install --no-cache-dir duckdb-engine &&
       /usr/bin/run-server.sh
       "
 
   dev:
     image: mcr.microsoft.com/devcontainers/typescript-node:20
     container_name: voice_bi_dev
+    init: true
     volumes:
       - .:/workspace:cached
     working_dir: /workspace
-    # Overrides default command to keep container alive
-    command: /bin/sh -c "while sleep 1000; do :; done"
+    # Standard devcontainer sleep to keep the container running
+    command: sleep infinity
     depends_on:
       - superset
+    environment:
+      - API_KEY=${API_KEY}
 
-# Instructions for Superset Database Connection:
-# Database Name: DuckDB
-# SQLAlchemy URI: duckdb:////data/my_database.duckdb
-# (Or to read parquet directly in SQL): SELECT * FROM read_parquet('/data/*.parquet')
+networks:
+  default:
+    name: voice_bi_network

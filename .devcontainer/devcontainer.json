@@ -6,14 +6,25 @@
   "workspaceFolder": "/workspace",
   "customizations": {
     "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
       "extensions": [
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
-        "dsznajder.es7-react-js-snippets"
+        "dsznajder.es7-react-js-snippets",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-driver-duckdb"
       ]
     }
   },
+  "remoteUser": "node",
   "forwardPorts": [8088, 3000],
-  "postCreateCommand": "echo 'Dev container ready. Superset is running at http://localhost:8088'"
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:1": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true
+    }
+  }
 }
