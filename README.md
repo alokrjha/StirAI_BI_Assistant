@@ -1,33 +1,39 @@
 
 # Voice BI Reporting System - Troubleshooting Guide
 
-If Apache Superset is not coming up at `http://localhost:8088/`, follow these steps:
+If Apache Superset is not coming up or you see `Permission denied` errors:
 
-## 1. Permission Errors
-If you see `Permission denied` in the logs:
-1. The `docker-compose.yml` is now configured to run as `root` to mitigate this.
-2. If issues persist, run this on your host machine:
-   ```bash
-   mkdir -p superset_data data
-   chmod -R 777 superset_data data
-   ```
+## 1. Reset Permissions (Critical)
+If you see `mkdir: cannot create directory ... Permission denied`, your local `superset_data` folder might have conflicting permission metadata from a previous failed run. Run this on your host machine:
 
-## 2. Check Container Logs
-Monitor the installation and initialization process:
+```bash
+# Delete the existing corrupted data folder
+# WARNING: This resets your Superset metadata (users/dashboards)
+rm -rf superset_data
+mkdir superset_data
+chmod -R 777 superset_data
+```
+
+Then restart the containers:
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+## 2. Monitor Installation
+The first run installs the DuckDB engine and runs migrations. This takes ~2 minutes.
 ```bash
 docker logs -f superset_app
 ```
-*Note: The first startup takes ~2 minutes to install DuckDB and run migrations.*
 
 ## 3. Verify Health Status
 Check if the container is "healthy":
 ```bash
 docker ps
 ```
-The status column should say `(healthy)`.
 
 ## 4. Manual Initialization (If Auto-Init Fails)
-If the UI is up but you can't log in, run these commands as root:
+If the UI is up but you can't log in, run these commands:
 ```bash
 # Create Admin User
 docker exec -u root -it superset_app superset fab create-admin \

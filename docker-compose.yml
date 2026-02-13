@@ -5,7 +5,7 @@ services:
   superset:
     image: apache/superset:latest
     container_name: superset_app
-    user: "root" # Run as root to allow pip install and volume permission management
+    user: "root" # Ensure we are root to perform system-level tasks
     restart: always
     ports:
       - "8088:8088"
@@ -16,16 +16,19 @@ services:
       - ADMIN_EMAIL=admin@example.com
       - TALISMAN_ENABLED=False
       - SUPERSET_PORT=8088
+      - PIP_USER=false # Force global install to avoid .local issues
+      - HOME=/app/superset_home # Explicitly set home
     volumes:
       - ./superset_data:/app/superset_home
       - ./data:/data
-    # Enhanced entrypoint: Installs engine, then checks if initialization is needed
+    # Robust entrypoint that fixes ownership and bypasses permission issues
     entrypoint: >
       /bin/sh -c "
-      echo 'Setting up environment permissions...' &&
-      mkdir -p /app/superset_home &&
+      echo 'Correcting volume permissions...' &&
+      chown -R root:root /app/superset_home &&
       chmod -R 777 /app/superset_home &&
-      pip install --no-cache-dir duckdb-engine &&
+      echo 'Installing DuckDB engine...' &&
+      HOME=/tmp pip install --no-cache-dir duckdb-engine &&
       if [ ! -f /app/superset_home/superset_init.completed ]; then
         echo 'First run detected. Initializing Superset metadata...' &&
         superset db upgrade &&
@@ -39,9 +42,9 @@ services:
       "
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      interval: 40s
+      timeout: 20s
+      retries: 10
 
   dev:
     image: mcr.microsoft.com/devcontainers/typescript-node:20
