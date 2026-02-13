@@ -1,0 +1,19 @@
+
+{
+  "name": "Voice BI Reporting Dev Env",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "dsznajder.es7-react-js-snippets"
+      ]
+    }
+  },
+  "forwardPorts": [8088, 3000],
+  "postCreateCommand": "echo 'Dev container ready. Superset is running at http://localhost:8088'"
+}

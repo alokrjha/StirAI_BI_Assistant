@@ -24,6 +24,17 @@ services:
       /usr/bin/run-server.sh
       "
 
+  dev:
+    image: mcr.microsoft.com/devcontainers/typescript-node:20
+    container_name: voice_bi_dev
+    volumes:
+      - .:/workspace:cached
+    working_dir: /workspace
+    # Overrides default command to keep container alive
+    command: /bin/sh -c "while sleep 1000; do :; done"
+    depends_on:
+      - superset
+
 # Instructions for Superset Database Connection:
 # Database Name: DuckDB
 # SQLAlchemy URI: duckdb:////data/my_database.duckdb
