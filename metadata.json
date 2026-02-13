@@ -1,0 +1,7 @@
+{
+  "name": "Voice-Activated BI Reporting System",
+  "description": "A cutting-edge BI dashboard powered by Apache Superset, DuckDB, and Gemini Live API for real-time voice-driven data exploration.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

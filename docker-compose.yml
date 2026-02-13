@@ -1,0 +1,30 @@
+
+# To run this:
+# 1. Save this file as docker-compose.yml
+# 2. Run `docker-compose up -d`
+# 3. Access Superset at http://localhost:8088
+
+version: "3.7"
+services:
+  superset:
+    image: apache/superset:latest
+    container_name: superset_app
+    ports:
+      - "8088:8088"
+    environment:
+      - SUPERSET_SECRET_KEY=your_secret_key_here
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin
+    volumes:
+      - ./superset_data:/app/superset_home
+      - ./data:/data # Mount your Parquet files folder here
+    entrypoint: >
+      /bin/sh -c "
+      pip install duckdb-engine &&
+      /usr/bin/run-server.sh
+      "
+
+# Instructions for Superset Database Connection:
+# Database Name: DuckDB
+# SQLAlchemy URI: duckdb:////data/my_database.duckdb
+# (Or to read parquet directly in SQL): SELECT * FROM read_parquet('/data/*.parquet')
