@@ -1,20 +1,54 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
 
-# Run and deploy your AI Studio app
+# Voice BI Reporting System - Troubleshooting Guide
 
-This contains everything you need to run your app locally.
+If Apache Superset is not coming up at `http://localhost:8088/`, follow these steps:
 
-View your app in AI Studio: https://ai.studio/apps/drive/1F4NCaS1xxwUkJPg-Al1EUkq-YL99qMYO
+## 1. Permission Errors
+If you see `Permission denied` in the logs:
+1. The `docker-compose.yml` is now configured to run as `root` to mitigate this.
+2. If issues persist, run this on your host machine:
+   ```bash
+   mkdir -p superset_data data
+   chmod -R 777 superset_data data
+   ```
 
-## Run Locally
+## 2. Check Container Logs
+Monitor the installation and initialization process:
+```bash
+docker logs -f superset_app
+```
+*Note: The first startup takes ~2 minutes to install DuckDB and run migrations.*
 
-**Prerequisites:**  Node.js
+## 3. Verify Health Status
+Check if the container is "healthy":
+```bash
+docker ps
+```
+The status column should say `(healthy)`.
 
+## 4. Manual Initialization (If Auto-Init Fails)
+If the UI is up but you can't log in, run these commands as root:
+```bash
+# Create Admin User
+docker exec -u root -it superset_app superset fab create-admin \
+              --username admin \
+              --firstname Admin \
+              --lastname User \
+              --email admin@example.com \
+              --password admin
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+# Upgrade DB
+docker exec -u root -it superset_app superset db upgrade
+
+# Setup Roles
+docker exec -u root -it superset_app superset init
+```
+
+## 5. Connecting DuckDB
+Once logged in (admin/admin):
+1. Go to **Settings** > **Database Connections**.
+2. Click **+ DATABASE**.
+3. Select **DuckDB** (if listed) or **Other**.
+4. **SQLAlchemy URI**: `duckdb:////data/your_file.duckdb`
+5. To query parquet files directly in SQL Lab:
+   `SELECT * FROM read_parquet('/data/*.parquet')`

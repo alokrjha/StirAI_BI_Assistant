@@ -5,6 +5,7 @@ services:
   superset:
     image: apache/superset:latest
     container_name: superset_app
+    user: "root" # Run as root to allow pip install and volume permission management
     restart: always
     ports:
       - "8088:8088"
@@ -12,17 +13,35 @@ services:
       - SUPERSET_SECRET_KEY=dev_secret_key_12345
       - ADMIN_USERNAME=admin
       - ADMIN_PASSWORD=admin
+      - ADMIN_EMAIL=admin@example.com
       - TALISMAN_ENABLED=False
+      - SUPERSET_PORT=8088
     volumes:
       - ./superset_data:/app/superset_home
       - ./data:/data
-    # We install duckdb-engine at runtime. 
-    # Using 'sh -c' to ensure the environment is ready before starting the server.
+    # Enhanced entrypoint: Installs engine, then checks if initialization is needed
     entrypoint: >
       /bin/sh -c "
+      echo 'Setting up environment permissions...' &&
+      mkdir -p /app/superset_home &&
+      chmod -R 777 /app/superset_home &&
       pip install --no-cache-dir duckdb-engine &&
+      if [ ! -f /app/superset_home/superset_init.completed ]; then
+        echo 'First run detected. Initializing Superset metadata...' &&
+        superset db upgrade &&
+        superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com --password admin &&
+        superset init &&
+        touch /app/superset_home/superset_init.completed &&
+        echo 'Initialization complete.'
+      fi &&
+      echo 'Starting Superset server...' &&
       /usr/bin/run-server.sh
       "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   dev:
     image: mcr.microsoft.com/devcontainers/typescript-node:20
@@ -31,7 +50,6 @@ services:
     volumes:
       - .:/workspace:cached
     working_dir: /workspace
-    # Standard devcontainer sleep to keep the container running
     command: sleep infinity
     depends_on:
       - superset
